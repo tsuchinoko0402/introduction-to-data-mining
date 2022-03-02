@@ -1,0 +1,111 @@
+Kyoki <- function( data, minDocFreq=2 ){
+ tmp <- apply(data, 1, function(x) sum(x > 0) ) >= minDocFreq
+ data[tmp,]
+}
+
+#
+# --------------------------------------------------------------------
+#
+dimReducShare <- function( SVD, share=0.5, docterm ){
+ sing.valu <- SVD$d
+ dim <- max(which(cumsum(sing.valu/sum(sing.valu)) <= share)) + 1
+ if( dim < 2) dim <- 2
+
+ space = NULL
+ space$tk = SVD$u[ , 1:dim]
+ space$dk = SVD$v[ , 1:dim]
+ space$sk = SVD$d[1:dim]
+ rownames(space$tk) = rownames(docterm)
+ rownames(space$dk) = colnames(docterm)
+ return (space)
+}
+
+#
+# --------------------------------------------------------------------
+#
+dimReducNdocs <- function( SVD, ndocs, docterm ){
+ sing.valu <- SVD$d
+ dim <- length(which(cumsum(sing.valu) <= ndocs)) + 1
+ if( dim < 2) dim <- 2
+
+ space = NULL
+ space$tk = SVD$u[ , 1:dim]
+ space$dk = SVD$v[ , 1:dim]
+ space$sk = SVD$d[1:dim]
+ rownames(space$tk) = rownames(docterm)
+ rownames(space$dk) = colnames(docterm)
+ return (space)
+}
+
+#
+# --------------------------------------------------------------------
+#
+dimReducKaiser <- function( SVD, docterm ){
+ sing.valu <- SVD$d
+ dim <- max(which(sing.valu >= 1))
+ if( dim < 2) dim <- 2
+
+ space = NULL
+ space$tk = SVD$u[ , 1:dim]
+ space$dk = SVD$v[ , 1:dim]
+ space$sk = SVD$d[1:dim]
+ rownames(space$tk) = rownames(docterm)
+ rownames(space$dk) = colnames(docterm)
+ return (space)
+}
+
+#
+# --------------------------------------------------------------------
+#
+dimReducFrac <- function( SVD, frac=(1/50), docterm ){
+ sing.valu <- SVD$d
+ dim <- ceiling(length(sing.valu)*frac)
+ if( dim < 2) dim <- 2
+
+ space = NULL
+ space$tk = SVD$u[ , 1:dim]
+ space$dk = SVD$v[ , 1:dim]
+ space$sk = SVD$d[1:dim]
+ rownames(space$tk) = rownames(docterm)
+ rownames(space$dk) = colnames(docterm)
+ return (space)
+}
+
+#
+# --------------------------------------------------------------------
+#
+myQuery <- function( qtext, term.list ){
+ tmp <- qtext %in% term.list
+ if( !all(tmp) ){
+	notInList <- qtext[!tmp]
+	posNot <- which(!tmp)
+	stop(
+		for(k in 1:length(notInList)){
+			cat(posNot[k], "\t", "番目の", notInList[k], "\t",
+			            "がterm.listに存在しません", "\n", sep="")
+		})
+ }
+ 
+ as.numeric(term.list %in% qtext)
+}
+#
+# --------------------------------------------------------------------
+#
+
+myCosine <- function( a, b=NULL ){
+ if( is.matrix(a) && is.null(b) ){
+	apply(a, 2, function(x){
+		apply(a, 2, function(y){
+			crossprod(x, y) / (sqrt(crossprod(x) * crossprod(y)))
+		})
+	})
+ }
+ else if( is.matrix(a) && is.vector(b) ){
+	apply(a, 2, function(x){
+		crossprod(x, b) / (sqrt(crossprod(x) * crossprod(b)))
+	})
+ }
+ else if( is.vector(a) && is.vector(b) ){
+ 	crossprod(a, b) / (sqrt(crossprod(a) * crossprod(b)))
+ }
+}

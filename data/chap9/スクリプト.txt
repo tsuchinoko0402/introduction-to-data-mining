@@ -1,0 +1,44 @@
+#まずMeCabをインストールしてから、RMeCabをインストールする。
+
+#RへのMeCabのインストールは次のURLに行く
+https://www.mlab.im.dendai.ac.jp/~yamada/ir/MorphologicalAnalyzer/MeCab.html
+#Windowsの「ダウンロード」をクリック
+#[Binary package for MS-Windows]の下にある [ダウンロード] をクリック
+#ダウンロードされた"exe"ファイルを実行するとMeCabインストールされる。
+
+#RMeCabをインストールするために、最初の1回だけ以下の命令を実行
+#install.packages("RMeCab", repos = "http://rmecab.jp/R")
+
+library(RMeCab)
+source("LSA.txt")
+
+docterm <- docMatrix("z")
+docterm <- docterm[-(1:2),]
+
+docterm2 <- Kyoki(docterm, minDocFreq=2)
+svd.docterm <- svd(docterm2)
+rslt <- dimReducShare(svd.docterm, share=0.5, docterm=docterm2)
+str(rslt)
+myCosine(a=t(rslt$dk))
+
+unmei <- RMeCabC("社交的で優しいし，俺のことを優先してくれるけど，意外とクールな面もある人")
+tmp <- unlist(unmei)
+lst <- names(tmp) %in% c("名詞", "動詞", "形容詞")
+unmei <- tmp[lst]
+unmei
+
+unmei.q <- myQuery(unmei, rownames(rslt$tk))
+
+unmei2 <- unmei[-c(4,6,7,8,10,11)]
+unmei.q <- myQuery(unmei2,rownames(rslt$tk))
+
+unmei.vec <- t(unmei.q) %*% rslt$tk %*% solve(diag(rslt$sk))
+unmei.vec <- as.vector(unmei.vec)
+
+unmei.cos <- myCosine(a=t(rslt$dk), b=unmei.vec)
+names(unmei.cos) <- as.character(1:33)
+round(sort(unmei.cos,de=T),3)[1:5]
+
+#   33     3    22     4    24 
+#0.755 0.700 0.482 0.444 0.403 
+#Mecabの辞書の変化に伴い、瑤泉院ちゃんが1番になってしまった(2021,01,11)
